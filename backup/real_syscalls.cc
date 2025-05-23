@@ -238,62 +238,30 @@ mkdir_fun_t register_mkdir(mkdir_fun_t f) throw() {
 
 #if defined(__has_feature)
 #if __has_feature(memory_sanitizer)
-#define USE_MY_REALPATH 1
-#endif
-#endif
-
-#if USE_MY_REALPATH
 #include <stdlib.h>
-#include <unistd.h>
-#include <assert.h>
-#include <limits.h>
-#include <string.h>
-char *my_msan_realpath(const char *path, char *out) {
-    assert(path != NULL);
-    if (out == NULL) {
-        out = (char *) malloc(PATH_MAX);
-        assert(out != NULL);
-    }
-    if (path[0] == '/') {
-        int r = snprintf(out, PATH_MAX, "%s", path);
-        assert(r >= 0 && r < PATH_MAX);
-    } else {
-        assert(getcwd(out, PATH_MAX) != NULL);
-        int n = strlen(out);
-        int r = snprintf(out+n, PATH_MAX-n, "/%s", path);
-        assert(r >= 0 && r < PATH_MAX-n);
-    }
-    return out;
-}
-
-static realpath_fun_t real_realpath = NULL;
-realpath_fun_t register_realpath(realpath_fun_t f) throw() {
-    if (real_realpath == NULL)
-        real_realpath = my_msan_realpath;
-    realpath_fun_t r = real_realpath;
-    real_realpath = f;
-    return r;
-}
-
-char *call_real_realpath(const char *pathname, char *result) throw() {
-    if (real_realpath == NULL)
-        real_realpath = my_msan_realpath;
-    return real_realpath(pathname, result);
-}
-
-#else
-
-static realpath_fun_t real_realpath = NULL;
-realpath_fun_t register_realpath(realpath_fun_t f) throw() {
-    dlvsym_set(&real_realpath, "realpath", "GLIBC_2.3");
-    realpath_fun_t r = real_realpath;
-    real_realpath = f;
-    return r;
-}
-
-char *call_real_realpath(const char *pathname, char *result) throw() {
-    dlvsym_set(&real_realpath, "realpath", "GLIBC_2.3");
-    return real_realpath(pathname, result);
-}
-
+#define USE_MSAN_REALPATH 1
 #endif
+#endif
+
+static realpath_fun_t real_realpath = NULL;
+realpath_fun_t register_realpath(realpath_fun_t f) throw() {
+#if USE_MSAN_REALPATH
+    if (real_realpath == NULL)
+        real_realpath = realpath;
+#else
+    dlvsym_set(&real_realpath, "realpath", "GLIBC_2.3");
+#endif
+    realpath_fun_t r = real_realpath;
+    real_realpath = f;
+    return r;
+}
+
+char *call_real_realpath(const char *pathname, char *result) throw() {
+#if USE_MSAN_REALPATH
+    if (real_realpath == NULL)
+        real_realpath = realpath;
+#else
+    dlvsym_set(&real_realpath, "realpath", "GLIBC_2.3");
+#endif
+    return real_realpath(pathname, result);
+}
