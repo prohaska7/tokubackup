@@ -230,15 +230,20 @@ disable_out: // preserves r if r!=0
     calls->after_stop_capt_call();
 
 unlock_out: // preserves r if r!0
-
     pmutex_unlock(&m_mutex, BACKTRACE(NULL));
-    if (m_an_error_happened) {
-        calls->report_error(m_errnum, m_errstring);
-        if (r==0) {
-            r = m_errnum; // if we already got an error then keep it.
+    {
+        pmutex_lock(&m_error_mutex);
+        bool my_error_happened = m_an_error_happened;
+        int my_errnum = m_errnum;
+        char *my_errstring = m_errstring;
+        pmutex_unlock(&m_error_mutex);
+        if (my_error_happened) {
+            calls->report_error(my_errnum, my_errstring);
+            if (r==0) {
+                r = my_errnum; // if we already got an error then keep it.
+            }
         }
     }
-
 error_out:
     thread_has_backup_calls = NULL;
     return r;
