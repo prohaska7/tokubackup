@@ -5,14 +5,14 @@
    fun:pthread_cond_destroy@*
 }
 {
-   ubuntu_24_01_printf_memmove
+   rfp_ubuntu_24_01_printf_memmove
    Helgrind:Race
    fun:memmove
    ...
    fun:printf
 }
 {
-   ubuntu_24_01_fprintf_memmove
+   rfp_ubuntu_24_01_fprintf_memmove
    Helgrind:Race
    fun:memmove
    ...

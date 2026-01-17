@@ -8,5 +8,18 @@
    drd:ConflictingAccess
    obj:/lib64/libpthread-2.5.so
 }
-
+{
+   rfp_printf_memmove
+   drd:ConflictingAccess
+   fun:memmove
+   ...
+   fun:printf
+}
+{
+   rfp_printf_mempcpy
+   drd:ConflictingAccess
+   fun:mempcpy
+   ...
+   fun:printf
+}
 
