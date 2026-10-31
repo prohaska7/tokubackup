@@ -140,7 +140,7 @@ static int check_it(char *dst, char *magic, int size, int count)
     return r;
 }
 
-const int SIZE = 16;
+const int SIZE = 17;
 char buf[SIZE] = {0};
 
 struct SourceAndDestinationDirectories {
