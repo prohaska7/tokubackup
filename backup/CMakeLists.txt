@@ -8,11 +8,11 @@ project(HotBackup)
 
 # pick language dialect
 include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag(-std=c++11 HAVE_STDCXX11)
-if (HAVE_STDCXX11)
-  set(CMAKE_CXX_FLAGS "-std=c++11 -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS}")
+check_cxx_compiler_flag(-std=c++17 HAVE_STDCXX17)
+if (HAVE_STDCXX17)
+  set(CMAKE_CXX_FLAGS "-std=c++17 -Wno-deprecated-declarations ${CMAKE_CXX_FLAGS}")
 else ()
-  message(FATAL_ERROR "${CMAKE_CXX_COMPILER} doesn't support -std=c++11, you need one that does.")
+  message(FATAL_ERROR "${CMAKE_CXX_COMPILER} doesn't support -std=c++17, you need one that does.")
 endif ()
 
 set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS 
