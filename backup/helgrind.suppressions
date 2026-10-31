@@ -18,3 +18,15 @@
    ...
    fun:fprintf
 }
+{
+   rfp_ubuntu_26_04_1_pthread_create
+   Helgrind:Race
+   ...
+   fun:pthread_create_WRK
+}
+{
+   rfp_ubuntu_26_04_1_mythread_wrapper
+   Helgrind:Race
+   ...
+   fun:mythread_wrapper
+}
