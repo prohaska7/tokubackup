@@ -445,3 +445,65 @@ void backup_set_start_copying(bool b) throw() {
     the_manager.set_start_copying(b);
 }
 #endif
+
+static int simple_counter;
+
+static void *simple_writer_thread(void *arg) {
+    simple_counter += 1;
+    return arg;
+}
+
+extern "C" void tokubackup_test_simple_data_race(void) {
+    simple_counter = 0;
+    pthread_t pid;
+    pthread_create(&pid, nullptr, simple_writer_thread, nullptr);
+    simple_counter += 1;
+    void *ret;
+    pthread_join(pid, &ret);
+    printf("%s: simple_counter = %d\n", __FUNCTION__, simple_counter);
+}
+
+static pthread_rwlock_t simple_lock = PTHREAD_RWLOCK_INITIALIZER;
+
+static void do_write_with_rdlock(void) {
+    pthread_rwlock_rdlock(&simple_lock);
+    simple_counter += 1;
+    pthread_rwlock_unlock(&simple_lock);
+}
+
+static void *test_rdlock_writes_thread(void *arg) {
+    do_write_with_rdlock();
+    return arg;
+}
+
+extern "C" void tokubackup_test_rdlock_writes(void) {
+    simple_counter = 0;
+    pthread_t pid;
+    pthread_create(&pid, nullptr, test_rdlock_writes_thread, nullptr);
+    do_write_with_rdlock();
+    void *ret;
+    pthread_join(pid, &ret);
+    printf("%s: simple_counter = %d\n", __FUNCTION__, simple_counter);
+}
+
+static void do_write_with_wrlock(void) {
+    pthread_rwlock_wrlock(&simple_lock);
+    simple_counter += 1;
+    pthread_rwlock_unlock(&simple_lock);
+}
+
+static void *test_wrlock_writes_thread(void *arg) {
+    do_write_with_wrlock();
+    return arg;
+}
+
+extern "C" void tokubackup_test_wrlock_writes(void) {
+    simple_counter = 0;
+    pthread_t pid;
+    pthread_create(&pid, nullptr, test_wrlock_writes_thread, nullptr);
+    do_write_with_wrlock();
+    void *ret;
+    pthread_join(pid, &ret);
+    printf("%s: simple_counter = %d\n", __FUNCTION__, simple_counter);
+}
+

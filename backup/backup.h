@@ -127,6 +127,12 @@ void tokubackup_throttle_backup(unsigned long bytes_per_second) throw() __attrib
 const extern char *tokubackup_version_string  __attribute__((visibility("default")));
 
 const int BACKUP_SUCCESS = 0;
+
+    void tokubackup_test_simple_data_race(void);
+
+    void tokubackup_test_rdlock_writes(void);
+
+    void tokubackup_test_wrlock_writes(void);
 }
 
 #endif // end of header guardian.

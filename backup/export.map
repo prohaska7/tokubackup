@@ -16,5 +16,8 @@
     truncate64; truncate;
     unlink;
     write;
+    tokubackup_test_simple_data_race;
+    tokubackup_test_rdlock_writes;
+    tokubackup_test_wrlock_writes;
   local: *;
 };

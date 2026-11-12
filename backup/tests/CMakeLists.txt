@@ -40,6 +40,13 @@ set(blackboxtests
   throttle_6564
   unlink_during_copy_test6515
   unlink_during_copy_test6515b
+  test_simple_data_race
+  test_tokubackup_simple_data_race
+  test_rdlock_writes
+  test_tokubackup_rdlock_writes
+  test_wrlock_writes
+  test_tokubackup_wrlock_writes
+  test_rwlocks
   )
 
 set(glassboxtests
