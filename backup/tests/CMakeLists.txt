@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.28.3)
 project(BackupTests)
 include_directories(..)
 find_package( Threads )
@@ -93,13 +93,13 @@ set(glassboxtests_no_grind
   )
 
 foreach(test ${blackboxtests})
-  add_executable(${test} ${test} backup_test_helpers)
+  add_executable(${test} ${test}.cc backup_test_helpers.cc)
   target_link_libraries(${test} HotBackup ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
   add_test(${test} ${test} --testname ${test})
 endforeach(test)
 
 foreach(test ${glassboxtests} ${glassboxtests_no_grind})
-  add_executable(${test} ${test} backup_test_helpers)
+  add_executable(${test} ${test}.cc backup_test_helpers.cc)
   target_link_libraries(${test} HotBackupGlassbox ${CMAKE_DL_LIBS} ${CMAKE_THREAD_LIBS_INIT})
   add_test(${test} ${test} --testname ${test})
 endforeach(test)

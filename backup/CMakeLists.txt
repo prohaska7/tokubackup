@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.28.3)
 
 if (POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW)
@@ -141,9 +141,9 @@ if (TOKUMX_ENTERPRISE_CREATE_EXPORTS)
 endif ()
 
 option(BACKUP_HAS_PARENT "Don't set this by hand.  It's used to tell the subcmake not to set things" ON)
-if (BACKUP_HAS_PARENT)
+if (NOT PROJECT_IS_TOP_LEVEL AND BACKUP_HAS_PARENT)
   set(HOT_BACKUP_LIBS ${HOT_BACKUP_LIBNAME} PARENT_SCOPE)
-endif (BACKUP_HAS_PARENT)
+endif ()
 
 option(USE_CTAGS "Build the ctags database." ON)
 file(GLOB_RECURSE all_srcs *.cc tests/*.cc)
