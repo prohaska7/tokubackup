@@ -57,6 +57,7 @@ static void setup(void)
         check(r<(int)sizeof(s));
         systemf("rm -rf %s", s);
         dirs[i] = strdup(s);
+        printf("%s: %s\n", __FUNCTION__, dirs[i]);
         check(dirs[i]);
     }
 }
@@ -73,6 +74,7 @@ static void write_lots_of_dummy_data(char *src)
     char dummy[MB] = {0};
     char file[SIZE];
     snprintf(file, SIZE, "%s/%s", src, "dummy");
+    printf("%s: %s\n", __FUNCTION__, src);
     int fd = open(file, O_CREAT | O_RDWR, 0777);
     check(fd >= 0);
     const int MEGS = 10;
@@ -86,6 +88,7 @@ static void work_it(char *src, char *magic, int size)
 {
     char file[100];
     snprintf(file, 100, "%s/%s", src, magic);
+    printf("%s: %s\n", __FUNCTION__, file);
 
     // 1.  Create a file.
     int fd = open(file, O_CREAT | O_RDWR, 0777);
@@ -123,7 +126,8 @@ static int check_it(char *magic, int size, int count)
 {
     int r = 0;
     for (int i = 0; i <= count; ++i) {
-        int backup_fd = openf(O_RDONLY, 0, "multiple_backups.backup_%d/magic%d", count , i);
+        printf("%s: %s.backup_%d/magic%d\n", __FUNCTION__, get_test_name(), count, i);
+        int backup_fd = openf(O_RDONLY, 0, "%s.backup_%d/magic%d", get_test_name(), count , i);
         char backup_buf[20] = {0};
         int result = pread(backup_fd, backup_buf, size, 0);
         char magic_buf[20] = {0};
