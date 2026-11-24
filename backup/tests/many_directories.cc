@@ -60,6 +60,7 @@ static void write_lots_of_dummy_data(char *src)
         int r = write(fd, dummy, MB);
         check(r == MB);
     }
+    close(fd);
 }
 
 static void work_it(char *src, char *magic, int size)
@@ -99,21 +100,15 @@ static void work_it(char *src, char *magic, int size)
     free((void*)buf);
 }
 
-static int check_it(char *dst, char *magic, int size, int count)
+static int check_it(char *src, char *dst)
 {
-    int r = 0;
-    int backup_fd = openf(O_RDONLY, 0, "%s/magic%d", dst, count);
-    char backup_buf[20] = {0};
-    int result = pread(backup_fd, backup_buf, size, 0);
-    char magic_buf[20] = {0};
-    { int magic_size = snprintf(magic_buf, size, "%s%d", magic, count); check(magic_size < size); }
-    result = strcmp(backup_buf, magic_buf);
-    if (result != 0) {
-        printf("Couldn't match: source:%s vs backup:%s\n", magic_buf, backup_buf);
-        r = -1;
+    int result = 0;
+    int r = systemf("diff -r %s %s", src, dst);
+    if (r != 0) {
+        printf("diff -r %s %s %d\n", src, dst, r);
+        result = -1;
     }
-
-    return r;
+    return result;
 }
 
 int many_directories(const int directory_count, const bool keep_capturing) {
@@ -153,10 +148,9 @@ int many_directories(const int directory_count, const bool keep_capturing) {
     // Check the work done in each directory.
     for (int i = 0; i < directory_count; ++i)
     {
-        snprintf(buf, SIZE, "magic");
-        int r = check_it(destinations[i], buf, SIZE, i);
+        int r = check_it(sources[i], destinations[i]);
         if (r != 0) {
-            result = -1 * i;
+            result = -1;
         }
     }
 
