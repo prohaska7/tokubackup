@@ -45,26 +45,28 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 #include "backup.h"
 #include "backup_test_helpers.h"
 
-const int TRIES = 3;
+const int TRIES = 16;
 char *dirs[TRIES];
 
 static void setup(void)
 {
     for (int i = 0; i < TRIES; ++i) {
-        const int LEN = 100;
+        const int LEN = 200;
         char s[LEN];
         int r = snprintf(s, sizeof(s), "%s.backup_%d", get_test_name(), i);
-        check(r<(int)sizeof(s));
+        check(r < LEN);
         systemf("rm -rf %s", s);
         dirs[i] = strdup(s);
-        printf("%s: %s\n", __FUNCTION__, dirs[i]);
         check(dirs[i]);
     }
 }
 
-static void breakdown(void)
-{
-    // The backup thread helpers free dirs[i].
+static void breakdown(void) {
+    // Note: since dir names freed here, they
+    // must be strdup'ed when starting the backup
+    for (int i = 0; i < TRIES; ++i) {
+        free(dirs[i]);
+    }
 }
 
 static void write_lots_of_dummy_data(char *src)
@@ -74,7 +76,6 @@ static void write_lots_of_dummy_data(char *src)
     char dummy[MB] = {0};
     char file[SIZE];
     snprintf(file, SIZE, "%s/%s", src, "dummy");
-    printf("%s: %s\n", __FUNCTION__, src);
     int fd = open(file, O_CREAT | O_RDWR, 0777);
     check(fd >= 0);
     const int MEGS = 10;
@@ -86,9 +87,9 @@ static void write_lots_of_dummy_data(char *src)
 
 static void work_it(char *src, char *magic, int size)
 {
-    char file[100];
-    snprintf(file, 100, "%s/%s", src, magic);
-    printf("%s: %s\n", __FUNCTION__, file);
+    const int FILE_MAX = 200;
+    char file[FILE_MAX];
+    snprintf(file, FILE_MAX, "%s/%s", src, magic);
 
     // 1.  Create a file.
     int fd = open(file, O_CREAT | O_RDWR, 0777);
@@ -122,27 +123,7 @@ static void work_it(char *src, char *magic, int size)
     free((void*)buf);
 }
 
-static int check_it(char *magic, int size, int count)
-{
-    int r = 0;
-    for (int i = 0; i <= count; ++i) {
-        printf("%s: %s.backup_%d/magic%d\n", __FUNCTION__, get_test_name(), count, i);
-        int backup_fd = openf(O_RDONLY, 0, "%s.backup_%d/magic%d", get_test_name(), count , i);
-        char backup_buf[20] = {0};
-        int result = pread(backup_fd, backup_buf, size, 0);
-        char magic_buf[20] = {0};
-        { int magic_size = snprintf(magic_buf, size, "%s%d", magic, i); check(magic_size < size); }
-        result = strcmp(backup_buf, magic_buf);
-        if (result != 0) {
-            printf("Couldn't match: source:%s vs backup:%s\n", magic_buf, backup_buf);
-            r = -1;
-        }
-    }
 
-    return r;
-}
-
-//
 static int multiple_backups(void) {
     setup_source();
     setup();
@@ -155,22 +136,28 @@ static int multiple_backups(void) {
     tokubackup_throttle_backup(1L << 22);
     for (int i = 0; i < TRIES; ++i) {
         setup_directory(dirs[i]);
-        start_backup_thread(&thread, dirs[i]);
-        const int SIZE = 7;
+        start_backup_thread(&thread, strdup(dirs[i]));
+
+        const int SIZE = 9;
         char buf[SIZE] = {0};
-        snprintf(buf, SIZE, "magic%i", i);
+        int r;
+        r = snprintf(buf, SIZE, "magic%d", i);
+        check(r < SIZE);
         work_it(src, buf, SIZE);
+
         finish_backup_thread(thread);
-        snprintf(buf, SIZE, "magic");
-        int r = check_it(buf, SIZE, i);
+
+        // diff the source and backup directories
+        r = systemf("diff -r %s %s", src, dirs[i]);
         if (r != 0) {
-            result = -1 * i;
+            printf("%s: diff -r %s %s %d\n", __FUNCTION__, src, dirs[i], r);
+            result = -1;
         }
     }
 
     free(src);
     if(result < 0) {
-        printf("Backup # %d failed.\n", result * -1);
+        printf("Backup # %d failed.\n", result);
         fail();
         result = -1;
     } else {
