@@ -48,29 +48,38 @@ Copyright (c) 2006, 2015, Percona and/or its affiliates. All rights reserved.
 
 static void write_lots_of_dummy_data(char *src)
 {
-    const int SIZE = 100;
     const int MB = 1024 * 1024;
-    char dummy[MB] = {0};
-    char file[SIZE];
+    char *dummy_mb = (char *) malloc(MB);
+    check(dummy_mb);
+    memset(dummy_mb, 0, MB);
+    const int SIZE = 200;
+    char *file = (char *) malloc(SIZE);
+    check(file);
     snprintf(file, SIZE, "%s/%s", src, "dummy");
     int fd = open(file, O_CREAT | O_RDWR, 0777);
     check(fd >= 0);
     const int MEGS = 10;
     for (int i = 0; i < MEGS; ++i) {
-        int r = write(fd, dummy, MB);
+        int r = write(fd, dummy_mb, MB);
         check(r == MB);
     }
+    free(dummy_mb);
+    free(file);
+
     close(fd);
 }
 
 static void work_it(char *src, char *magic, int size)
 {
-    char file[100];
-    snprintf(file, 100, "%s/%s", src, magic);
+    const int SIZE = 200;
+    char *file = (char *) malloc(SIZE);
+    check(file);
+    snprintf(file, SIZE, "%s/%s", src, magic);
 
     // 1.  Create a file.
     int fd = open(file, O_CREAT | O_RDWR, 0777);
     check(fd >= 0);
+
     // 2.  Write magic to the file.
     int r = write(fd, magic, size);
     check(r == size);
@@ -97,7 +106,9 @@ static void work_it(char *src, char *magic, int size)
 
     // close the file.
     close(fd);
+
     free((void*)buf);
+    free(file);
 }
 
 static int check_it(char *src, char *dst)
